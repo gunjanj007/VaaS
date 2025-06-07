@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import { OpenAI } from "openai";
+import { saveAesthetic, listAesthetics, getAesthetic } from "./storage.js";
 
 dotenv.config();
 
@@ -9,9 +10,11 @@ if (!process.env.OPENAI_API_KEY) {
   process.exit(1);
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Centralise model selection
+const CHAT_MODEL = process.env.OPENAI_CHAT_MODEL ?? "gpt-4o-mini"; // vision-capable chat model
+const EMBEDDING_MODEL = process.env.OPENAI_EMBEDDING_MODEL ?? "text-embedding-3-small";
 
 const app = express();
 app.use(express.json({ limit: "25mb" })); // allow large base64 images
@@ -22,7 +25,7 @@ async function describeImage(base64Url: string): Promise<string> {
   const dataUrl = base64Url.startsWith("data:") ? base64Url : `data:image/png;base64,${base64Url}`;
 
   const completion = await openai.chat.completions.create({
-    model: "gpt-4o", // vision-capable model
+    model: CHAT_MODEL,
     max_tokens: 120,
     temperature: 0.5,
     messages: [
@@ -44,6 +47,60 @@ async function describeImage(base64Url: string): Promise<string> {
     ],
   });
 
+// Endpoint: fetch remote HTML by URL and transform
+app.post("/api/transform-url", async (req: Request, res: Response) => {
+  // @ts-ignore
+  const body = req.body as TransformUrlBody;
+
+  if (!body?.url || (!body.aesthetic && !body.aesthetic_name)) {
+    // @ts-ignore
+    return res.status(400).json({ error: "Provide 'url' and either 'aesthetic' or 'aesthetic_name'." });
+  }
+
+  try {
+    // Fetch HTML
+    // @ts-ignore fetch global
+    const resp = await fetch(body.url, { headers: { "User-Agent": "Mozilla/5.0" } });
+    if (!resp.ok) throw new Error(`Failed to fetch URL: ${resp.status}`);
+    let html = await resp.text();
+
+    // Inject a <base> tag so that all relative links and images resolve correctly when the transformed HTML is displayed
+    // Only add when the document has a <head> element and no existing <base>. The base href points to the original
+    // document's directory so that `/foo` and `images/x.png` style paths work as expected.
+    try {
+      const hasHead = /<head[^>]*>/i.test(html);
+      const hasBase = /<base\s[^>]*href=/i.test(html);
+      if (hasHead && !hasBase) {
+        // Determine base URL ending with a trailing slash (directory of the fetched resource)
+        const baseHref = new URL('.', body.url).href;
+        html = html.replace(/<head([^>]*)>/i, `<head$1><base href="${baseHref}">`);
+      }
+    } catch (e) {
+      // If anything goes wrong, continue without injecting – transformation will still proceed
+    }
+
+    let aestheticText = body.aesthetic ?? "";
+    if (!aestheticText && body.aesthetic_name) {
+      const saved = getAesthetic(body.aesthetic_name);
+      if (!saved) {
+        // @ts-ignore
+        return res.status(404).json({ error: "aesthetic_name not found" });
+      }
+      aestheticText = saved.embedding;
+    }
+
+    const transformed = await applyAestheticToHtml(html, aestheticText);
+
+    // Store artifact (optional)
+    // @ts-ignore
+    return res.json({ html: transformed });
+  } catch (err: any) {
+    console.error(err);
+    // @ts-ignore
+    return res.status(500).json({ error: err?.message || "Failed to transform URL" });
+  }
+});
+
   return (completion.choices[0]?.message?.content ?? "").trim();
 }
 
@@ -52,7 +109,7 @@ async function generateAestheticEmbedding(descriptions: string[]): Promise<strin
   const prompt = `Using the following descriptions of images and text snippets, craft a single, vivid textual embedding that captures the aesthetic essence, mood and style. Use evocative adjectives and nouns, separated by commas, without numbering or line breaks. Limit to 120 words.\n\nDescriptions:\n${descriptions.join("\n")}`;
 
   const completion = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: CHAT_MODEL,
     max_tokens: 150,
     temperature: 0.7,
     messages: [
@@ -67,7 +124,7 @@ async function generateAestheticEmbedding(descriptions: string[]): Promise<strin
 // Helper: turn embedding text into numeric vector (optional)
 async function vectorize(text: string): Promise<number[]> {
   const embeddingResp = await openai.embeddings.create({
-    model: "text-embedding-3-small",
+    model: EMBEDDING_MODEL,
     input: text,
   });
 
@@ -80,14 +137,14 @@ async function applyAestheticToHtml(html: string, aesthetic: string): Promise<st
   const snippet = html.slice(0, 20000);
 
   const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: CHAT_MODEL,
     temperature: 0.7,
     max_tokens: 4096,
     messages: [
       {
         role: "system",
         content:
-          "You are a senior front-end engineer. You receive an existing HTML document and a high-level aesthetic description. Your task is to modify the HTML so that its visual style (CSS) reflects the aesthetic while keeping structure and functionality intact. You may add <style> blocks or inline styles. Output ONLY the final, complete HTML document with no explanations or markdown code fences.",
+          "You are a senior front-end engineer. You receive an existing full HTML document and an aesthetic description.\n\nRequirements:\n1. DO NOT remove or rename any existing elements, attributes, links or images.\n2. Preserve all href/src URLs exactly as they appear.\n3. Add the aesthetic purely via safe CSS: inline styles, CSS classes, or a <style> block in <head>.\n4. Do NOT alter text content except for minor colour tweaks via CSS.\n5. Deliver the final, complete HTML document ONLY (no markdown fences, no extra commentary).",
       },
       {
         role: "user",
@@ -105,11 +162,19 @@ interface MoodRequestBody {
   urls?: string[]; // webpage URLs to scrape design cues from
   // vector embeddings are no longer supported; flag kept for backward compatibility but ignored
   returnVector?: boolean;
+
+  name?: string; // Optional name to save this aesthetic under
 }
 
 interface TransformRequestBody {
   html: string; // raw HTML string
   aesthetic: string; // textual aesthetic embedding/description
+}
+
+interface TransformUrlBody {
+  url: string;
+  aesthetic?: string; // direct embedding
+  aesthetic_name?: string; // saved name to fetch
 }
 
 // Helper: extract aesthetic description from a webpage URL
@@ -206,9 +271,18 @@ app.post("/api/mood", async (req: Request, res: Response) => {
     // Create final aesthetic embedding text
     const aestheticText = await generateAestheticEmbedding(descriptions);
 
-    // Always return only textual embedding – numeric vectors deprecated
-    // @ts-ignore Ignore type mismatch for error response shape
-    return res.json({ aesthetic_embedding: aestheticText });
+    // Save if name supplied
+    if (body.name) {
+      try {
+        saveAesthetic(body.name, aestheticText);
+      } catch (err) {
+        console.error("Failed to save aesthetic", err);
+      }
+    }
+
+    // Respond
+    // @ts-ignore
+    return res.json({ aesthetic_embedding: aestheticText, saved_as: body.name ?? undefined });
   } catch (err: any) {
     console.error(err);
     // @ts-ignore Ignore type mismatch for error response shape
@@ -234,6 +308,25 @@ app.post("/api/transform", async (req: Request, res: Response) => {
     // @ts-ignore
     return res.status(500).json({ error: err?.message || "Failed to transform HTML" });
   }
+});
+
+// List saved aesthetics
+app.get("/api/aesthetics", (_req: Request, res: Response) => {
+  // @ts-ignore
+  return res.json({ data: listAesthetics() });
+});
+
+// Fetch single aesthetic by name
+app.get("/api/aesthetic/:name", (req: Request, res: Response) => {
+  // @ts-ignore
+  const name = (req.params as any).name as string;
+  const entry = getAesthetic(name);
+  if (!entry) {
+    // @ts-ignore
+    return res.status(404).json({ error: "Not found" });
+  }
+  // @ts-ignore
+  return res.json(entry);
 });
 
 const PORT = process.env.PORT || 5000;

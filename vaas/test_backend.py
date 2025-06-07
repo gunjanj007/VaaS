@@ -31,6 +31,7 @@ import subprocess
 import sys
 import time
 import traceback
+import json
 from contextlib import contextmanager
 from typing import Generator
 
@@ -149,6 +150,34 @@ def run_tests(base_url: str) -> None:  # noqa: C901 – okay in single script
                 if expect_field and expect_field in data:
                     print(f"    ↳ output ({expect_field}):")
                     print(data[expect_field])
+
+                    # If the field is HTML, store input/output to disk for inspection
+                    if expect_field == "html":
+                        import re, pathlib, datetime, json as _json
+
+                        artifacts_dir = pathlib.Path("artifacts")
+                        artifacts_dir.mkdir(exist_ok=True)
+
+                        # slug from test name
+                        slug = re.sub(r"[^a-zA-Z0-9_-]+", "_", name.lower())
+                        ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+                        # Determine source HTML content
+                        source_html: str
+                        if "html" in payload:
+                            source_html = payload["html"]
+                        elif "url" in payload:
+                            source_html = payload["url"]
+                        else:
+                            source_html = "<unknown>"
+
+                        if "html" in payload:
+                            (artifacts_dir / f"{slug}_{ts}_input.html").write_text(source_html, encoding="utf-8")
+                        elif "url" in payload:
+                            (artifacts_dir / f"{slug}_{ts}_input.url").write_text(source_html, encoding="utf-8")
+                        (artifacts_dir / f"{slug}_{ts}_output.html").write_text(data[expect_field], encoding="utf-8")
+                        # also save minimal metadata json for reference
+                        meta = {"name": name, "endpoint": endpoint, "payload": {k:v for k,v in payload.items() if k!="html"}, "timestamp": ts}
+                        (artifacts_dir / f"{slug}_{ts}.json").write_text(_json.dumps(meta, indent=2), encoding="utf-8")
                 else:
                     print("    ↳ output:")
                     print(data)
@@ -178,6 +207,14 @@ def run_tests(base_url: str) -> None:  # noqa: C901 – okay in single script
 
     run_case("URL-only", {"urls": ["https://www.apple.com"]})
 
+    # Save aesthetic extracted from Apple.com for later use
+    print("Generating & saving aesthetic from Apple homepage…")
+    save_apple = {
+        "urls": ["https://www.apple.com"],
+        "name": "apple_style",
+    }
+    run_case("Save apple aesthetic", save_apple)
+
     img_b64 = fetch_sample_image()
     payload_mixed = {
         "texts": ["playful retro arcade vibes"],
@@ -201,16 +238,59 @@ def run_tests(base_url: str) -> None:  # noqa: C901 – okay in single script
     payload_bulk = {"texts": texts_bulk, "images": images_bulk, "urls": urls_bulk}
     run_case("Bulk multi-item payload", payload_bulk)
 
-    # 5. HTML transform using constant aesthetic
-    sample_html = (
-        "<!DOCTYPE html><html><head><title>Dummy</title></head><body>"
-        "<h1>Hello world</h1><p>This is a demo page.</p></body></html>"
-    )
+    # 5. Persisted aesthetic flow
+    print("Generating and saving aesthetic named 'magazine_style'…")
+    save_payload = {
+        "texts": ["sleek minimalist magazine layout, monochrome palette"],
+        "name": "magazine_style",
+    }
+    run_case("Save aesthetic", save_payload)
+
+    # Retrieve via GET
+    print("Retrieving saved aesthetic 'magazine_style'…", end=" ")
+    resp_get = requests.get(f"{base_url}/api/aesthetic/magazine_style", timeout=30)
+    assert resp_get.ok, "failed to fetch saved aesthetic"
+    saved_embedding = resp_get.json().get("embedding")
+    assert saved_embedding, "saved embedding missing"
+    print("✓")
+
+    # 6. HTML transform using saved embedding
+    # Load external dummy site from artifacts/dummy_site.html if present, else create it
+    import pathlib, textwrap
+    artifacts_dir = pathlib.Path("artifacts")
+    dummy_path = artifacts_dir / "dummy_site.html"
+    if dummy_path.exists():
+        sample_html = dummy_path.read_text(encoding="utf-8")
+    else:
+        sample_html = textwrap.dedent(
+            """<!DOCTYPE html>
+            <html>
+            <head><title>Dummy</title></head>
+            <body>
+              <h1>Hello world</h1>
+              <p>This is a demo page.</p>
+            </body>
+            </html>"""
+        ).strip()
+        artifacts_dir.mkdir(exist_ok=True)
+        dummy_path.write_text(sample_html, encoding="utf-8")
     transform_payload = {
         "html": sample_html,
-        "aesthetic": "warm cozy coffee shop palette, serif typography, cream background",
+        "aesthetic": saved_embedding,
     }
     run_case("Transform HTML", transform_payload, endpoint="/api/transform", expect_field="html")
+
+    # 7. Transform remote URL using saved aesthetic
+    url_payload = {
+        "url": "https://www.berkshirehathaway.com",
+        "aesthetic_name": "apple_style",
+    }
+    run_case(
+        "Transform URL",
+        url_payload,
+        endpoint="/api/transform-url",
+        expect_field="html",
+    )
 
     run_case("Negative (empty body)", {}, expect_status=400)
 

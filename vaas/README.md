@@ -2,6 +2,112 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### Environment
+
+Set `OPENAI_API_KEY` in your shell or a `.env` file:
+
+```bash
+export OPENAI_API_KEY=sk-...
+
+Optional: override default OpenAI models
+
+```bash
+# Vision / chat model (default: gpt-4o-mini)
+export OPENAI_CHAT_MODEL=gpt-4o
+
+# Embedding model (default: text-embedding-3-small)
+export OPENAI_EMBEDDING_MODEL=text-embedding-3-large
+```
+```
+
+### Development server (hot-reload)
+
+```bash
+npm run dev        # uses ts-node-dev (requires ts-node-dev installed)
+```
+
+### Production build
+
+```bash
+npm run build      # compiles TS → dist/
+node dist/server.js
+```
+
+The server listens on `$PORT` (default 3000).
+
+---
+
+## HTTP API
+
+All endpoints are JSON. Supply your `OPENAI_API_KEY` in the environment of the backend – the client need not send it.
+
+### 1. Generate aesthetic embedding
+
+`POST /api/mood`
+
+Body fields (all optional except one of texts/images/urls):
+
+* `texts`  – `string[]` free-form descriptions
+* `images` – `string[]` base64 data-URIs (or raw base64) of images
+* `urls`   – `string[]` webpages; HTML is scraped & summarised by GPT-4-o
+* `name`   – **optional** string. When provided the resulting aesthetic is persisted and can be reused later.
+
+Response
+
+```jsonc
+{
+  "aesthetic_embedding": "dusky lavender haze, neo-brutalist grids, ...",
+  "saved_as": "coffee-shop" // present only if you sent name
+}
+```
+
+### 2. Apply aesthetic to existing HTML
+
+`POST /api/transform`
+
+```jsonc
+{
+  "html": "<!doctype html>...",     // required, original HTML
+  "aesthetic": "dusky lavender haze" // required, text embedding (e.g. from /api/mood)
+}
+```
+
+Returns `{ "html": "<!doctype html>...modified..." }` (full HTML file with inline CSS/theme).
+
+### 2b. Apply aesthetic directly to a live website
+
+`POST /api/transform-url`
+
+```jsonc
+{
+  "url": "https://example.com",      // required
+  "aesthetic": "…" |                  // OR provide direct text
+  "aesthetic_name": "saved_key"       // OR reference previously saved aesthetic
+}
+```
+
+Returns `{ "html": "<!doctype html>...modified..." }`.
+
+### 3. Saved aesthetics
+
+* `GET /api/aesthetics` – list all saved {name, embedding, created}
+* `GET /api/aesthetic/:name` – retrieve single saved embedding
+
+The server stores these in `data/aesthetics.json`.
+
+---
+
+## Running tests
+
+`python test_backend.py` will:
+
+1. Compile & launch the backend on an internal port.
+2. Exercise all API endpoints (including transform & persistence).
+3. Print request & response for each successful case.
+4. Dump diagnostics for any failures.
+
+Use `BACKEND_URL=http://host:port python test_backend.py` to test a remote instance.
+
 First, run the development server:
 
 ```bash

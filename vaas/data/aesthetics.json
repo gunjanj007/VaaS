@@ -1,0 +1,17 @@
+{
+  "coffee_shop": {
+    "name": "coffee_shop",
+    "embedding": "inviting, rustic ambiance, soft golden light, rich mahogany furniture, gentle murmur of conversations, aromatic coffee wafting, plush seating, scattered vintage books, cheerful baristas, comforting familiarity, delicate pastries displayed, warm hues of burnt orange and deep brown, soothing background music, intimate gatherings, the scent of cinnamon and freshly brewed espresso, a haven for creativity, nostalgic charm, friendly smiles, quiet corners for reflection, creative energy, warmth enveloping the soul, artistic decor, textured walls whispering stories, fleeting moments of connection, tranquil atmosphere, a sanctuary of inspiration, heartwarming gatherings, the essence of community, a cup of solace, a tapestry of laughter and whispers.",
+    "created": "2025-06-07T23:07:30.431Z"
+  },
+  "magazine_style": {
+    "name": "magazine_style",
+    "embedding": "sleek, minimalist, monochrome, elegant, refined, spacious, modern, sophisticated, stark contrasts, bold typography, clean lines, understated beauty, curated aesthetic, visual harmony, tranquil, crisp imagery, thoughtful composition, artistic simplicity, contemporary allure, muted tones, sharp focus, harmonious balance, stylish restraint, polished surfaces, atmospheric depth, serene sophistication, refined visuals, chic layout, understated elegance, inviting clarity, graphic precision, subtle sophistication, visually striking, timeless design",
+    "created": "2025-06-07T23:47:11.084Z"
+  },
+  "apple_style": {
+    "name": "apple_style",
+    "embedding": "sleek, modern, minimalist, clean, white, gray, subtle, black, crisp, professional, sophisticated, innovative, airy, refined, elegant, contemporary, harmonious, understated, balanced, luminous, tranquil, polished, dynamic, inviting, fluid, intuitive, user-friendly, monochrome, stylish, forward-thinking, aesthetic, seamless, digital, versatile, tech-savvy, immersive, engaging, streamlined, fresh, bright, open, bold",
+    "created": "2025-06-07T23:46:52.790Z"
+  }
+}
