@@ -1,6 +1,49 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
+
+// Define interfaces for our state
+interface ImageType {
+  name: string;
+  url: string;
+  file: File;
+}
+
+interface Palette {
+  primary: string;
+  secondary: string;
+  accent: string;
+  background: string;
+  text: string;
+}
+
+interface TypographyStyle {
+  family: string;
+  weight: number;
+  style: string;
+}
+
+interface Typography {
+  heading: TypographyStyle;
+  body: TypographyStyle;
+}
+
+interface StyleAttributes {
+  corner_radius: string;
+  border_style: string;
+  shadow_intensity: number;
+  spacing_scale: number;
+}
+
+interface AestheticOutput {
+  id: string;
+  name: string;
+  palette: Palette;
+  typography: Typography;
+  keywords: string[];
+  style_attributes: StyleAttributes;
+  css_vars: string;
+}
 
 // --- SVG Icons (for a clean, dependency-free setup) ---
 const UploadIcon = () => (
@@ -50,19 +93,19 @@ const DownloadIcon = () => (
 
 // --- Main Application Component (Next.js Page) ---
 export default function VibeGeneratorPage() {
-    const [textPrompt, setTextPrompt] = useState('');
-    const [images, setImages] = useState([]);
-    const [url, setUrl] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [aestheticOutput, setAestheticOutput] = useState(null);
-    const [showCopied, setShowCopied] = useState(false);
+    const [textPrompt, setTextPrompt] = useState<string>('');
+    const [images, setImages] = useState<ImageType[]>([]);
+    const [url, setUrl] = useState<string>('');
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [aestheticOutput, setAestheticOutput] = useState<AestheticOutput | null>(null);
+    const [showCopied, setShowCopied] = useState<boolean>(false);
 
     const isInputProvided = useMemo(() => textPrompt.trim() !== '' || images.length > 0 || url.trim() !== '', [textPrompt, images, url]);
 
-    const handleImageUpload = (e) => {
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            const filesArray = Array.from(e.target.files);
-            const imageObjects = filesArray.map(file => ({
+            const filesArray = Array.from(e.target.files) as File[];
+            const imageObjects: ImageType[] = filesArray.map(file => ({
                 name: file.name,
                 url: URL.createObjectURL(file),
                 file: file
@@ -71,13 +114,13 @@ export default function VibeGeneratorPage() {
         }
     };
     
-    const handleDrop = (e) => {
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
         e.currentTarget.classList.remove('border-indigo-500');
         if (e.dataTransfer.files) {
-            const filesArray = Array.from(e.dataTransfer.files);
-            const imageObjects = filesArray.map(file => ({
+            const filesArray = Array.from(e.dataTransfer.files) as File[];
+            const imageObjects: ImageType[] = filesArray.map(file => ({
                 name: file.name,
                 url: URL.createObjectURL(file),
                 file: file
@@ -86,24 +129,24 @@ export default function VibeGeneratorPage() {
         }
     };
 
-    const handleDragOver = (e) => {
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
     };
 
-    const handleDragEnter = (e) => {
+    const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
         e.currentTarget.classList.add('border-indigo-500');
     };
 
-    const handleDragLeave = (e) => {
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
         e.currentTarget.classList.remove('border-indigo-500');
     };
 
-    const removeImage = (indexToRemove) => {
+    const removeImage = (indexToRemove: number) => {
         setImages(prevImages => prevImages.filter((_, index) => index !== indexToRemove));
     };
 
