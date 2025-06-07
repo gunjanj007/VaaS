@@ -74,6 +74,31 @@ async function vectorize(text: string): Promise<number[]> {
   return embeddingResp.data[0].embedding;
 }
 
+// Helper: apply aesthetic embedding onto raw HTML using GPT-4
+async function applyAestheticToHtml(html: string, aesthetic: string): Promise<string> {
+  // Limit html to 20k chars to fit context
+  const snippet = html.slice(0, 20000);
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    temperature: 0.7,
+    max_tokens: 4096,
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are a senior front-end engineer. You receive an existing HTML document and a high-level aesthetic description. Your task is to modify the HTML so that its visual style (CSS) reflects the aesthetic while keeping structure and functionality intact. You may add <style> blocks or inline styles. Output ONLY the final, complete HTML document with no explanations or markdown code fences.",
+      },
+      {
+        role: "user",
+        content: `AESTHETIC:\n${aesthetic}\n\nHTML:\n${snippet}`,
+      },
+    ],
+  });
+
+  return (completion.choices[0]?.message?.content ?? "").trim();
+}
+
 interface MoodRequestBody {
   texts?: string[];
   images?: string[]; // base64 strings, with or without data URI prefix
@@ -82,11 +107,16 @@ interface MoodRequestBody {
   returnVector?: boolean;
 }
 
+interface TransformRequestBody {
+  html: string; // raw HTML string
+  aesthetic: string; // textual aesthetic embedding/description
+}
+
 // Helper: extract aesthetic description from a webpage URL
 async function describeUrl(targetUrl: string): Promise<string> {
   try {
     // Basic fetch – Node 18+ has global fetch
-    // @ts-ignore - fetch typing from DOM lib
+    // @ts-ignore - fetch available globally in Node 18+, but types not in CommonJS context
     const res = await fetch(targetUrl, { method: "GET", headers: { "User-Agent": "Mozilla/5.0" } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const html = await res.text();
@@ -95,7 +125,7 @@ async function describeUrl(targetUrl: string): Promise<string> {
     const snippet = html.slice(0, 15000);
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       max_tokens: 120,
       temperature: 0.5,
       messages: [
@@ -123,7 +153,7 @@ app.post("/api/mood", async (req: Request, res: Response) => {
   const body = req.body as MoodRequestBody;
 
   if (!body.texts && !body.images && !body.urls) {
-    // @ts-ignore Express type stubs not available in this environment; ignore type complaint
+    // @ts-ignore Ignore custom response key on Express Response
     return res.status(400).json({ error: "Provide texts, images or urls." });
   }
 
@@ -177,12 +207,32 @@ app.post("/api/mood", async (req: Request, res: Response) => {
     const aestheticText = await generateAestheticEmbedding(descriptions);
 
     // Always return only textual embedding – numeric vectors deprecated
-    // @ts-ignore
+    // @ts-ignore Ignore type mismatch for error response shape
     return res.json({ aesthetic_embedding: aestheticText });
   } catch (err: any) {
     console.error(err);
-    // @ts-ignore
+    // @ts-ignore Ignore type mismatch for error response shape
     return res.status(500).json({ error: err?.message || "Failed to generate embedding" });
+  }
+});
+
+// Endpoint: apply aesthetic to HTML
+app.post("/api/transform", async (req: Request, res: Response) => {
+  // @ts-ignore: ignore Express body typing limitations
+  const body = req.body as TransformRequestBody;
+  if (!body?.html || !body?.aesthetic) {
+    // @ts-ignore
+    return res.status(400).json({ error: "Provide 'html' and 'aesthetic' fields." });
+  }
+
+  try {
+    const transformed = await applyAestheticToHtml(body.html, body.aesthetic);
+    // @ts-ignore
+    return res.json({ html: transformed });
+  } catch (err: any) {
+    console.error(err);
+    // @ts-ignore
+    return res.status(500).json({ error: err?.message || "Failed to transform HTML" });
   }
 });
 
