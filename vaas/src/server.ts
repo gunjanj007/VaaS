@@ -143,7 +143,7 @@ async function applyAestheticToHtml(html: string, aesthetic: string): Promise<st
       {
         role: "system",
         content:
-          "You are a senior front-end engineer. You receive an existing full HTML document and an aesthetic description.\n\nRequirements:\n1. DO NOT remove or rename any existing elements, attributes, links or images.\n2. Preserve all href/src URLs exactly as they appear.\n3. Add the aesthetic purely via safe CSS: inline styles, CSS classes, or a <style> block in <head>.\n4. Do NOT alter text content except for colour tweaks via CSS.\n5. Make bold and creative changes and make sure the changes portray the aesthetic.\n6.Make sure to choose font and background color such that there is contrast and the text remains legible\n7. Deliver the final, complete HTML document ONLY (no markdown fences, no extra commentary).",
+          "You are a senior front-end engineer. You receive an existing full HTML document and an aesthetic description.\n\nRequirements:\n1. DO NOT remove or rename any existing text elements.\n 2. Understand and do low level changes. \n3. Add the aesthetic via CSS: inline styles, CSS classes, or a <style> block in <head>. Remember to be very creative and stick to theme. \n5. Make bold and creative changes and make sure the changes portray the aesthetic.\n6.Make sure to choose font and background color such that there is contrast and the text remains legible\n7. Deliver the final, complete HTML with correct syntax document ONLY (no markdown fences, no extra commentary).",
       },
       {
         role: "user",
