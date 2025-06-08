@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+import cors from "cors";
 import dotenv from "dotenv";
 import { OpenAI } from "openai";
 import { saveAesthetic, listAesthetics, getAesthetic } from "./storage.js";
@@ -17,6 +18,7 @@ const CHAT_MODEL = process.env.OPENAI_CHAT_MODEL ?? "gpt-4o-mini"; // vision-cap
 const EMBEDDING_MODEL = process.env.OPENAI_EMBEDDING_MODEL ?? "text-embedding-3-small";
 
 const app = express();
+app.use(cors()); // Allow all origins for development simplicity
 app.use(express.json({ limit: "25mb" })); // allow large base64 images
 
 // Helper: describe a single image via GPT-Vision
@@ -47,6 +49,10 @@ async function describeImage(base64Url: string): Promise<string> {
     ],
   });
 
+
+  return (completion.choices[0]?.message?.content ?? "").trim();
+}
+
 // Endpoint: fetch remote HTML by URL and transform
 app.post("/api/transform-url", async (req: Request, res: Response) => {
   // @ts-ignore
@@ -65,18 +71,15 @@ app.post("/api/transform-url", async (req: Request, res: Response) => {
     let html = await resp.text();
 
     // Inject a <base> tag so that all relative links and images resolve correctly when the transformed HTML is displayed
-    // Only add when the document has a <head> element and no existing <base>. The base href points to the original
-    // document's directory so that `/foo` and `images/x.png` style paths work as expected.
     try {
       const hasHead = /<head[^>]*>/i.test(html);
       const hasBase = /<base\s[^>]*href=/i.test(html);
       if (hasHead && !hasBase) {
-        // Determine base URL ending with a trailing slash (directory of the fetched resource)
         const baseHref = new URL('.', body.url).href;
         html = html.replace(/<head([^>]*)>/i, `<head$1><base href="${baseHref}">`);
       }
-    } catch (e) {
-      // If anything goes wrong, continue without injecting – transformation will still proceed
+    } catch {
+      /* ignore */
     }
 
     let aestheticText = body.aesthetic ?? "";
@@ -91,7 +94,6 @@ app.post("/api/transform-url", async (req: Request, res: Response) => {
 
     const transformed = await applyAestheticToHtml(html, aestheticText);
 
-    // Store artifact (optional)
     // @ts-ignore
     return res.json({ html: transformed });
   } catch (err: any) {
@@ -100,9 +102,6 @@ app.post("/api/transform-url", async (req: Request, res: Response) => {
     return res.status(500).json({ error: err?.message || "Failed to transform URL" });
   }
 });
-
-  return (completion.choices[0]?.message?.content ?? "").trim();
-}
 
 // Helper: craft aesthetic embedding text from collected descriptions
 async function generateAestheticEmbedding(descriptions: string[]): Promise<string> {
@@ -144,7 +143,7 @@ async function applyAestheticToHtml(html: string, aesthetic: string): Promise<st
       {
         role: "system",
         content:
-          "You are a senior front-end engineer. You receive an existing full HTML document and an aesthetic description.\n\nRequirements:\n1. DO NOT remove or rename any existing elements, attributes, links or images.\n2. Preserve all href/src URLs exactly as they appear.\n3. Add the aesthetic purely via safe CSS: inline styles, CSS classes, or a <style> block in <head>.\n4. Do NOT alter text content except for minor colour tweaks via CSS.\n5. Deliver the final, complete HTML document ONLY (no markdown fences, no extra commentary).",
+          "You are a senior front-end engineer. You receive an existing full HTML document and an aesthetic description.\n\nRequirements:\n1. DO NOT remove or rename any existing elements, attributes, links or images.\n2. Preserve all href/src URLs exactly as they appear.\n3. Add the aesthetic purely via safe CSS: inline styles, CSS classes, or a <style> block in <head>.\n4. Do NOT alter text content except for colour tweaks via CSS.\n5. Make bold and creative changes and make sure the changes portray the aesthetic.\n6.Make sure to choose font and background color such that there is contrast and the text remains legible\n7. Deliver the final, complete HTML document ONLY (no markdown fences, no extra commentary).",
       },
       {
         role: "user",
@@ -330,6 +329,18 @@ app.get("/api/aesthetic/:name", (req: Request, res: Response) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Mood embedding backend running on http://localhost:${PORT}`);
+const server = app.listen(PORT, () => {
+  console.log("===========================================");
+  console.log(`🚀 Backend ready on http://localhost:${PORT}`);
+  console.log("Press CTRL+C to stop\n");
 });
+
+for (const sig of ["SIGINT", "SIGTERM"]) {
+  process.on(sig, () => {
+    console.log(`\n💀  Received ${sig}. Shutting down...`);
+    server.close(() => {
+      console.log("✓ HTTP server closed – port released");
+      process.exit(0);
+    });
+  });
+}
