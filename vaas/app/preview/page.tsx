@@ -21,9 +21,17 @@ export default function PreviewPage() {
     return <p className="p-4 text-red-600">Invalid preview link.</p>;
   }
 
+  const BACKEND =
+    process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:5050";
+  const proxied = `${BACKEND}/api/proxy?url=${encodeURIComponent(url)}`;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 h-screen">
-      <iframe src={url} className="w-full h-full border-r" />
+      <iframe
+        src={proxied}
+        className="w-full h-full border-r"
+        sandbox="allow-same-origin allow-scripts"
+      />
       {html ? (
         <iframe
           srcDoc={html}

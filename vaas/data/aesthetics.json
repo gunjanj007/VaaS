@@ -1,42 +1,22 @@
 {
-  "coffee_shop": {
-    "name": "coffee_shop",
-    "embedding": "inviting, rustic ambiance, soft golden light, rich mahogany furniture, gentle murmur of conversations, aromatic coffee wafting, plush seating, scattered vintage books, cheerful baristas, comforting familiarity, delicate pastries displayed, warm hues of burnt orange and deep brown, soothing background music, intimate gatherings, the scent of cinnamon and freshly brewed espresso, a haven for creativity, nostalgic charm, friendly smiles, quiet corners for reflection, creative energy, warmth enveloping the soul, artistic decor, textured walls whispering stories, fleeting moments of connection, tranquil atmosphere, a sanctuary of inspiration, heartwarming gatherings, the essence of community, a cup of solace, a tapestry of laughter and whispers.",
-    "created": "2025-06-07T23:07:30.431Z"
-  },
-  "magazine_style": {
-    "name": "magazine_style",
-    "embedding": "sleek, minimalist, sophisticated, monochrome, elegant, crisp, modern, refined, understated, artistic, airy, clean lines, bold typography, captivating imagery, harmonious balance, subtle contrasts, tranquil, contemporary, polished, curated, open spaces, dynamic composition, striking visuals, serene ambiance, innovative design, stylish simplicity, muted tones, visual clarity, thoughtful arrangement, aesthetic harmony, refined elegance, chic sophistication.",
-    "created": "2025-06-08T01:01:33.026Z"
-  },
-  "apple_style": {
-    "name": "apple_style",
-    "embedding": "minimalist, sleek, monochromatic, black, white, gray, modern, sophisticated, high-tech, clean, elegant, refined, understated, contemporary, airy, digital, streamlined, balanced, harmonious, intuitive, chic, crisp, polished, innovative, stylish, functional, premium, serene, luxurious, user-friendly, dynamic, aesthetic, artistry, simplicity, clarity, design-forward, cutting-edge, minimalist typography, architectural, crisp lines, spacious, engaging, refined elegance, visual clarity, tech-savvy.",
-    "created": "2025-06-08T01:01:13.762Z"
-  },
-  "apple": {
-    "name": "apple",
-    "embedding": "sleek, minimalist, monochromatic, subtle, gray, white, clean, modern, sophisticated, innovative, structured, intuitive, elegant, harmonious, refined, crisp, understated, contemporary, seamless, stylish, timeless, balanced, fluid, luminous, professional, polished, airy, serene, functional, artistic, tech-inspired, user-centric, captivating, dynamic, forward-thinking, aesthetic, luxurious, inviting, graceful, cohesive, pristine, digital, minimalist chic",
-    "created": "2025-06-08T01:47:30.931Z"
-  },
-  "spidy": {
-    "name": "spidy",
-    "embedding": "Dynamic, intense, vibrant red, electric blue, dramatic lighting, stylized action, graphic novel aesthetic, sleek, modern, earthy browns, creamy whites, soft ambient glow, minimalist contours, warm wood accents, muted tones, serene focus, tech-inspired elegance, harmonious balance, captivating energy, visual storytelling, artistic flair, modern sophistication, striking contrasts, immersive atmosphere, contemporary charm, visual dynamism, refined simplicity, bold expression, evocative design, cinematic quality, powerful imagery, emotional depth, aesthetic unity.",
-    "created": "2025-06-08T01:57:41.084Z"
-  },
-  "spidy_2": {
-    "name": "spidy_2",
-    "embedding": "Dynamic intensity, muted colors, reds, blues, earth tones, dramatic lighting, stylized, comic book-inspired, sleek sophistication, warm browns, whites, aerodynamic design, modern organization, warm neutrals, soft ambient lighting, cozy focus, vivid contrasts, bold lines, artistic flair, sleek elegance, architectural precision, smooth surfaces, contemporary minimalism, inviting warmth, structured creativity, harmonious balance, energized ambiance, cinematic tension, polished aesthetics, refined contours, effortless functionality, artistic symmetry, creative dynamism, visceral energy, immersive allure, graphic storytelling, innovative design, sophisticated charm, visual narrative, engaging depth, intricate textures, refined atmosphere, subtle contrasts, artistic coherence, visual harmony.",
-    "created": "2025-06-08T01:59:16.283Z"
-  },
-  "spidy 3": {
-    "name": "spidy 3",
+  "Spiderman": {
+    "name": "Spiderman",
     "embedding": "Dynamic intensity, muted reds, moody blues, dramatic lighting, stylized comic flair, sleek sophistication, earthy warmth, soft illumination, high-end automotive elegance, modern refinement, organized clarity, warm neutrals, ambient glow, minimalist chic, aesthetic cohesion, evocative contrasts, artistic fusion, visual narrative, cinematic allure, polished precision, contemporary elegance, bold expressiveness, harmonious balance, abstract dynamism, sleek modernity, refined simplicity, creative synergy, compelling vibrancy, striking contrast, elegant composition, immersive ambiance, fluid grace, artistic depth, emotive resonance, visual intrigue, captivating essence, refined modernism, harmonious fusion, expressive artistry, aesthetic allure, dynamic storytelling, sophisticated warmth, minimalist elegance, evocative imagery.",
     "created": "2025-06-08T02:02:57.404Z"
   },
-  "neon_ramen_rain": {
-    "name": "neon_ramen_rain",
+  "Neon Ramen Rain": {
+    "name": "Neon Ramen Rain",
     "embedding": "neon glow, urban allure, rain-soaked streets, vibrant reflections, steaming ramen bowls, bustling nightscape, electric hues, cozy warmth, shimmering puddles, intricate signage, soft mist, bustling ambiance, comforting aromas, lively chatter, wet pavement, luminous contrast, bustling energy, cozy refuge, culinary delight, vibrant culture, inviting glow, sensory immersion, bustling crowd, soft drizzle, urban sanctuary, steaming broth, radiant colors, ephemeral beauty, intimate corner, city pulse, nostalgic charm, tranquil escape, lively atmosphere, rain-drenched, cultural tapestry, neon symphony, culinary haven, bustling rhythm, atmospheric glow, reflective surfaces, urban intimacy, lively night, vibrant setting, cozy nook, sensory tapestry, rain-kissed ambiance, vibrant",
     "created": "2025-06-08T02:16:45.946Z"
+  },
+  "Hogwarts": {
+    "name": "Hogwarts",
+    "embedding": "Whimsical, enchanting, mystical, ancient, dimly-lit, towering bookshelves, leather-bound tomes, gleaming wood, flickering candlelight, ornate carvings, stained glass windows, magical ambiance, scholarly retreat, Hogwarts-inspired, dusty volumes, secret alcoves, timeworn, spellbinding aura, cobblestone flooring, creaky steps, aroma of parchment, scholarly whispers, timeless knowledge, wizardly charm, ethereal atmosphere, enchanted relics, shadowy nooks, golden chandeliers, ivy-draped walls, arcane symbols, hushed reverence, scholarly sanctuary, mystical allure, enchanting quietude, labyrinthine passageways, storied past, ancient wisdom, scholarly pursuit, hidden secrets, literary wonderland",
+    "created": "2025-06-08T02:30:18.719Z"
+  },
+  "Marvelous Mrs Mazel": {
+    "name": "Marvelous Mrs Mazel",
+    "embedding": "",
+    "created": "2025-06-08T02:50:17.411Z"
   }
 }

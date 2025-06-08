@@ -28,8 +28,7 @@ async function describeImage(base64Url: string): Promise<string> {
 
   const completion = await openai.chat.completions.create({
     model: CHAT_MODEL,
-    max_tokens: 120,
-    temperature: 0.5,
+    max_completion_tokens: 120,
     messages: [
       {
         role: "user",
@@ -109,8 +108,7 @@ async function generateAestheticEmbedding(descriptions: string[]): Promise<strin
 
   const completion = await openai.chat.completions.create({
     model: CHAT_MODEL,
-    max_tokens: 150,
-    temperature: 0.7,
+    max_completion_tokens: 150,
     messages: [
       { role: "system", content: "You distill visual and textual input into concise aesthetic embeddings." },
       { role: "user", content: prompt },
@@ -137,8 +135,7 @@ async function applyAestheticToHtml(html: string, aesthetic: string): Promise<st
 
   const completion = await openai.chat.completions.create({
     model: CHAT_MODEL,
-    temperature: 0.7,
-    max_tokens: 4096,
+    max_completion_tokens: 10000,
     messages: [
       {
         role: "system",
@@ -189,9 +186,8 @@ async function describeUrl(targetUrl: string): Promise<string> {
     const snippet = html.slice(0, 15000);
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      max_tokens: 120,
-      temperature: 0.5,
+      model: CHAT_MODEL,
+      max_completion_tokens: 120,
       messages: [
         {
           role: "system",
@@ -326,6 +322,24 @@ app.get("/api/aesthetic/:name", (req: Request, res: Response) => {
   }
   // @ts-ignore
   return res.json(entry);
+});
+
+// Simple proxy to fetch raw HTML so we can embed sites that disallow iframes.
+app.get("/api/proxy", async (req: Request, res: Response) => {
+  // @ts-ignore query exists
+  const target = (req.query as any).url as string | undefined;
+  if (!target) return (res as any).status(400).send("Missing url param");
+  try {
+    // @ts-ignore fetch global
+    const r = await fetch(target, { headers: { "User-Agent": "Mozilla/5.0" } });
+    const html = await r.text();
+    // @ts-ignore
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    // @ts-ignore
+    return (res as any).send(html);
+  } catch (e: any) {
+    return (res as any).status(500).send(e?.message || "Proxy failed");
+  }
 });
 
 const PORT = process.env.PORT || 5000;
