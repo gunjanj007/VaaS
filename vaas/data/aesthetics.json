@@ -18,5 +18,10 @@
     "name": "Marvelous Mrs Mazel",
     "embedding": "",
     "created": "2025-06-08T02:50:17.411Z"
+  },
+  "Harry Potter": {
+    "name": "Harry Potter",
+    "embedding": "majestic wizarding towers, brooding stone battlements, slate-blue turrets, warm golden sky, late-afternoon glow, soft dappled light, muted greys, dusky blues, drifting parchment letters, swirling owl feathers, timeless magic, cinematic realism, faint mist, nostalgic study, rich mahogany shelves, weathered leather tomes, brass candleholders, emerald velvet armchairs, antique quills, shimmering gold accents, dust-flecked sunbeams, Victorian eclecticism, inviting hearth, subtle incense, whispering intrigue, secret academia, enchanted ambiance",
+    "created": "2025-06-08T03:49:25.203Z"
   }
 }

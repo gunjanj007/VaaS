@@ -28,7 +28,7 @@ async function describeImage(base64Url: string): Promise<string> {
 
   const completion = await openai.chat.completions.create({
     model: CHAT_MODEL,
-    max_completion_tokens: 120,
+    max_completion_tokens: 2000,
     messages: [
       {
         role: "user",
@@ -106,16 +106,21 @@ app.post("/api/transform-url", async (req: Request, res: Response) => {
 async function generateAestheticEmbedding(descriptions: string[]): Promise<string> {
   const prompt = `Using the following descriptions of images and text snippets, craft a single, vivid textual embedding that captures the aesthetic essence, mood and style. Use evocative adjectives and nouns, separated by commas, without numbering or line breaks. Limit to 120 words.\n\nDescriptions:\n${descriptions.join("\n")}`;
 
-  const completion = await openai.chat.completions.create({
-    model: CHAT_MODEL,
-    max_completion_tokens: 150,
-    messages: [
+  try {
+    const completion = await openai.chat.completions.create({
+      model: CHAT_MODEL,
+      max_completion_tokens: 1000,
+      messages: [
       { role: "system", content: "You distill visual and textual input into concise aesthetic embeddings." },
       { role: "user", content: prompt },
     ],
-  });
+    });
 
-  return (completion.choices[0]?.message?.content ?? "").trim();
+    return (completion.choices[0]?.message?.content ?? "").trim();
+  } catch (err) {
+    console.error("OpenAI chat generation failed, using fallback", err);
+    return descriptions.slice(0, 5).join(", ").slice(0, 600);
+  }
 }
 
 // Helper: turn embedding text into numeric vector (optional)
@@ -187,7 +192,7 @@ async function describeUrl(targetUrl: string): Promise<string> {
 
     const completion = await openai.chat.completions.create({
       model: CHAT_MODEL,
-      max_completion_tokens: 120,
+      max_completion_tokens: 3000,
       messages: [
         {
           role: "system",
@@ -263,8 +268,20 @@ app.post("/api/mood", async (req: Request, res: Response) => {
       }
     }
 
+    if (!descriptions.length) {
+      // Should not happen due to earlier check but guard anyway
+      // @ts-ignore
+      return res.status(400).json({ error: "No valid input to derive embedding" });
+    }
+
     // Create final aesthetic embedding text
     const aestheticText = await generateAestheticEmbedding(descriptions);
+
+    if (!aestheticText.trim()) {
+      // OpenAI may have failed silently – do not save empty embeddings
+      // @ts-ignore
+      return res.status(500).json({ error: "Failed to generate embedding" });
+    }
 
     // Save if name supplied
     if (body.name) {
